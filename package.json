@@ -1,0 +1,21 @@
+{
+  "name": "raincache-ts",
+  "version": "0.4.1",
+  "description": "A pluggable discord cache worker",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "niputi",
+  "license": "MIT",
+  "optionalDependencies": {
+    "amqplib": "^0.5.3",
+    "ioredis": "^4.10.0"
+  },
+  "types": "./types/index.d.ts",
+  "devDependencies": {
+    "@types/amqplib": "^0.5.12",
+    "@types/ioredis": "^4.0.12",
+    "eslint": "^5.16.0"
+  }
+}

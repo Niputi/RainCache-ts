@@ -1,0 +1,58 @@
+'use strict';
+import BaseConnector from "./BaseConnector";
+import amqp, {Connection, Channel} from "amqplib";
+
+/**
+ * Amqp Connector, used for receiving and sending messages to an amqp based message queue
+ * @extends BaseConnector
+ */
+class AmqpConnector extends BaseConnector {
+
+
+    client: null | Connection
+    channel: null | Channel
+    options: { amqpUrl: string, amqpQueue: string, sendQueue: string }
+
+    /**
+     * Create a new Amqp Connector
+     * @param {Object} options - Options
+     * @param {String} [options.amqpUrl=amqp://localhost] - amqp host to connect to
+     * @param {String} [options.amqpQueue=test-pre-cache] - amqp queue to use for receiving events
+     * @param {String} [options.sendQueue=test-post-cache] - amqp queue to use for sending events
+     */
+    constructor(options :{ amqpUrl: string, amqpQueue: string }) {
+        super();
+        this.options = {amqpUrl: 'amqp://localhost', amqpQueue: 'test-pre-cache', sendQueue: 'test-post-cache'};
+        Object.assign(this.options, options);
+        this.client = null;
+        this.channel = null;
+        this.ready = false;
+    }
+
+    /**
+     * Initializes the connector by creating a new connection to the amqp host set via config and creating a new queue to receive messages from
+     * @returns {Promise.<void>}
+     */
+    async initialize(): Promise<void> {
+        this.client = await amqp.connect(this.options.amqpUrl);
+        this.channel = await this.client.createChannel();
+        this.ready = true;
+        this.channel.assertQueue(this.options.amqpQueue, {durable: false, autoDelete: true});
+        this.channel.consume(this.options.amqpQueue, (event) => {
+            this.channel.ack(event);
+            // console.log(event.content.toString());
+            this.emit('event', JSON.parse(event.content.toString()));
+        });
+    }
+
+    /**
+     * Forward an event to the outgoing amqp queue
+     * @param {Object} event - event that should be forwarded, has to be JSON.stringify-able
+     * @returns {Promise.<void>}
+     */
+    async send(event: Object): Promise<void> {
+        this.channel.sendToQueue(this.options.sendQueue, Buffer.from(JSON.stringify(event)));
+    }
+}
+
+export default AmqpConnector;
